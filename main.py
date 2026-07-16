@@ -36,7 +36,7 @@ DATA_FILE = os.path.join(DATA_DIR, "pinouts.json")
 
 # ---- Thong tin phien ban / repo GitHub de tu kiem tra ban cap nhat ----
 # SUA 2 DONG DUOI DAY sau khi ban tao repo GitHub that (xem HUONG_DAN_GITHUB.md)
-APP_VERSION = "1.0.1"
+APP_VERSION = "1.0.2"
 GITHUB_OWNER = "Xangg-vct"     # <-- da cap nhat theo repo that
 GITHUB_REPO = "Xangg2kvct"     # <-- da cap nhat theo repo that
 
