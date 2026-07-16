@@ -1,0 +1,82 @@
+{
+  "app_title": "ECU PINOUT TOOL",
+  "app_version": "v1.4",
+  "brands": {
+    "ALL_BRAND": { "label": "ALL BRAND", "models": {} },
+    "ASTONMARTIN": { "label": "ASTONMARTIN", "models": {} },
+    "BMW_MINI": { "label": "BMW_MINI", "models": {} },
+    "CHEVROLET": { "label": "CHEVROLET", "models": {} },
+    "DEUTZ": { "label": "DEUTZ", "models": {} },
+    "DUCATI": { "label": "DUCATI", "models": {} },
+    "FAL": {
+      "label": "FAL",
+      "models": {
+        "ME17.3.0": {
+          "title": "BOSCH_ME17.3.0_IROM_TC1793_EGPT_FAL",
+          "version": "v.01.00",
+          "subtitle": [
+            "ECU CONNECTOR / CONNETTORE ECU / CONNECTEUR ECU",
+            "ECU VERBINDUNG / CONECTOR ECU"
+          ],
+          "image": "images/FAL_ME17_3_0.png",
+          "pins": []
+        },
+        "MED17.3.1": {
+          "title": "BOSCH_MED17.3.1_IROM_TC1793_EGPT_FAL",
+          "version": "v.01.00",
+          "subtitle": [
+            "ECU CONNECTOR / CONNETTORE ECU / CONNECTEUR ECU",
+            "ECU VERBINDUNG / CONECTOR ECU"
+          ],
+          "image": "images/FAL_MED17_3_1.png",
+          "pins": []
+        },
+        "MED17.3.3": {
+          "title": "BOSCH_MED17.3.3_IROM_TC1793_EGPT_FAL",
+          "version": "v.02.00",
+          "subtitle": [
+            "ECU CONNECTOR / CONNETTORE ECU / CONNECTEUR ECU",
+            "ECU VERBINDUNG / CONECTOR ECU"
+          ],
+          "image": "images/FAL_MED17_3_3.png",
+          "pins": [
+            { "x": 0.79, "y": 0.20, "label": "PIN 5, 86 = +12V", "color": "#e74c3c" },
+            { "x": 0.435, "y": 0.53, "label": "PIN 41 = GPT1", "color": "#2980b9" },
+            { "x": 0.415, "y": 0.80, "label": "PIN 18 = GPT0", "color": "#1b1b1b" },
+            { "x": 0.155, "y": 0.90, "label": "PIN1 = GND", "color": "#1b1b1b" },
+            { "x": 0.685, "y": 0.87, "label": "PIN 44 = CAN L", "color": "#27ae60" },
+            { "x": 0.905, "y": 0.83, "label": "PIN 61 = CAN H", "color": "#1b1b1b" }
+          ]
+        },
+        "MED17.3": {
+          "title": "BOSCH_MED17.3_IROM_TC1793_EGPT_FAL",
+          "version": "v.01.00",
+          "subtitle": [
+            "ECU CONNECTOR / CONNETTORE ECU / CONNECTEUR ECU",
+            "ECU VERBINDUNG / CONECTOR ECU"
+          ],
+          "image": "images/FAL_MED17_3.png",
+          "pins": []
+        }
+      }
+    },
+    "FCA": { "label": "FCA", "models": {} },
+    "FORD": { "label": "FORD", "models": {} },
+    "HONDA": { "label": "HONDA", "models": {} },
+    "ISUZU": { "label": "ISUZU", "models": {} },
+    "JAC": { "label": "JAC", "models": {} },
+    "JAGUAR": { "label": "JAGUAR", "models": {} },
+    "JEEP": { "label": "JEEP", "models": {} },
+    "JLR": { "label": "JLR", "models": {} },
+    "KIA_HYUNDAI": { "label": "KIA_HYUNDAI", "models": {} },
+    "KTM": { "label": "KTM", "models": {} },
+    "MAHINDRA": { "label": "MAHINDRA", "models": {} },
+    "MAN": { "label": "MAN", "models": {} },
+    "MASERATI": { "label": "MASERATI", "models": {} },
+    "MCLAREN": { "label": "MCLAREN", "models": {} },
+    "MERCEDES": { "label": "MERCEDES", "models": {} },
+    "NISSAN_RENAULT": { "label": "NISSAN_RENAULT", "models": {} },
+    "OPEL": { "label": "OPEL", "models": {} },
+    "PIAGGIO": { "label": "PIAGGIO", "models": {} }
+  }
+}

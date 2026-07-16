@@ -1,0 +1,42 @@
+name: Build and Release Windows EXE
+
+# Workflow nay tu chay khi ban push mot "tag" dang v1.0.0, v1.1.0, v2.0.3, ...
+# No se: cai Python -> cai pillow + pyinstaller -> dong goi main.py thanh .exe
+# -> tao 1 GitHub Release moi va dinh kem file .exe vao do tu dong.
+# Ban KHONG can cai Python/pyinstaller tren may minh de lam viec nay.
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows-exe:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install pillow pyinstaller
+
+      - name: Build EXE with PyInstaller
+        run: |
+          pyinstaller --onefile --windowed --add-data "data;data" --name "ECU_Pinout_Tool" main.py
+
+      - name: Create GitHub Release with EXE attached
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/ECU_Pinout_Tool.exe
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
