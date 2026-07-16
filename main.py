@@ -36,9 +36,9 @@ DATA_FILE = os.path.join(DATA_DIR, "pinouts.json")
 
 # ---- Thong tin phien ban / repo GitHub de tu kiem tra ban cap nhat ----
 # SUA 2 DONG DUOI DAY sau khi ban tao repo GitHub that (xem HUONG_DAN_GITHUB.md)
-APP_VERSION = "1.0.0"
-GITHUB_OWNER = "your-github-username"   # <-- doi thanh username GitHub cua ban
-GITHUB_REPO = "pinout-tool"             # <-- doi thanh ten repo cua ban
+APP_VERSION = "1.0.1"
+GITHUB_OWNER = "Xangg-vct"     # <-- da cap nhat theo repo that
+GITHUB_REPO = "Xangg2kvct"     # <-- da cap nhat theo repo that
 
 ACCENT = "#8a7dff"
 
