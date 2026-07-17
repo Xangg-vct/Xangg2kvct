@@ -18,10 +18,10 @@ Package as a Windows .exe (optional):
 
 import json
 import os
+import subprocess
 import sys
 import threading
 import urllib.request
-import webbrowser
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 
@@ -37,7 +37,7 @@ DATA_FILE = os.path.join(DATA_DIR, "pinouts.json")
 
 # ---- Version / GitHub repo info used for the update check ----
 # EDIT THE 2 LINES BELOW after creating your real GitHub repo (see HOW_TO_GITHUB.md)
-APP_VERSION = "1.0.4"
+APP_VERSION = "1.0.5"
 GITHUB_OWNER = "Xangg-vct"     # <-- already set to the real repo owner
 GITHUB_REPO = "Xangg2kvct"     # <-- already set to the real repo name
 
@@ -88,6 +88,7 @@ class PinoutApp(tk.Tk):
         self.offset_y = 0
         self._drag_start = None
         self.theme_name = "light"
+        self._progress_win = None
 
         self._build_menu()
         self._build_layout()
@@ -268,32 +269,152 @@ class PinoutApp(tk.Tk):
                 data = json.loads(resp.read().decode("utf-8"))
 
             latest_tag = str(data.get("tag_name", "")).lstrip("vV")
-            release_url = data.get(
-                "html_url",
-                f"https://github.com/{GITHUB_OWNER}/{GITHUB_REPO}/releases")
+            assets = data.get("assets", [])
 
             if latest_tag and self._version_tuple(latest_tag) > self._version_tuple(APP_VERSION):
-                self.after(0, lambda: self._on_update_available(latest_tag, release_url))
+                self.after(0, lambda: self._on_update_available(latest_tag, assets))
             elif not silent:
                 self.after(0, lambda: messagebox.showinfo(
                     "Check for updates", f"You are running the latest version (v{APP_VERSION})."))
         except Exception as e:
             if not silent:
-                self.after(0, lambda: messagebox.showwarning(
+                err_msg = str(e)
+                self.after(0, lambda msg=err_msg: messagebox.showwarning(
                     "Check for updates",
-                    f"Could not connect to GitHub to check for updates.\n"
-                    f"Check your internet connection or try again later.\n\nDetails: {e}"))
+                    f"Could not check for updates.\n"
+                    f"Check your internet connection or try again later.\n\nDetails: {msg}"))
         finally:
             if not silent:
                 self.after(0, self._reset_update_btn)
 
-    def _on_update_available(self, latest_tag, release_url):
-        if messagebox.askyesno(
+    def _on_update_available(self, latest_tag, assets):
+        exe_asset = next(
+            (a for a in assets if str(a.get("name", "")).lower().endswith(".exe")),
+            None)
+
+        if not exe_asset:
+            messagebox.showinfo(
                 "Update available",
                 f"A new version is available: v{latest_tag}\n"
                 f"You are running: v{APP_VERSION}\n\n"
-                "Open the download page now?"):
-            webbrowser.open(release_url)
+                "No downloadable installer was found for this release yet.")
+            return
+
+        size_mb = exe_asset.get("size", 0) / (1024 * 1024)
+        if messagebox.askyesno(
+                "Update available",
+                f"A new version is available: v{latest_tag}\n"
+                f"You are running: v{APP_VERSION}\n"
+                f"Installer size: {size_mb:.1f} MB\n\n"
+                "Download it now?"):
+            self._start_download(latest_tag, exe_asset)
+
+    # ---------------------------------------------------------- auto download
+    def _start_download(self, tag, exe_asset):
+        download_url = exe_asset["browser_download_url"]
+        total_size = exe_asset.get("size", 0)
+        asset_name = exe_asset.get("name", "ECU_Pinout_Tool.exe")
+
+        downloads_dir = os.path.join(os.path.expanduser("~"), "Downloads")
+        try:
+            os.makedirs(downloads_dir, exist_ok=True)
+        except Exception:
+            downloads_dir = os.path.expanduser("~")
+
+        base, ext = os.path.splitext(asset_name)
+        dest_path = os.path.join(downloads_dir, f"{base}_v{tag}{ext}")
+
+        self._show_progress_dialog(tag)
+        threading.Thread(target=self._download_worker,
+                          args=(download_url, dest_path, total_size),
+                          daemon=True).start()
+
+    def _show_progress_dialog(self, tag):
+        win = tk.Toplevel(self)
+        win.title("Downloading update")
+        win.geometry("380x120")
+        win.resizable(False, False)
+        win.transient(self)
+        win.grab_set()
+
+        t = THEMES[self.theme_name]
+        win.configure(bg=t["app_bg"])
+
+        tk.Label(win, text=f"Downloading version v{tag}...",
+                 bg=t["app_bg"], fg=t["title_fg"],
+                 font=("Segoe UI", 10, "bold")).pack(pady=(16, 8))
+
+        self.progress_var = tk.DoubleVar(value=0)
+        self.progress_bar = ttk.Progressbar(
+            win, orient="horizontal", length=320, mode="determinate",
+            maximum=100, variable=self.progress_var)
+        self.progress_bar.pack(pady=4)
+
+        self.progress_label = tk.Label(win, text="0 MB / 0 MB",
+                                        bg=t["app_bg"], fg=t["sub_fg"])
+        self.progress_label.pack(pady=4)
+
+        win.protocol("WM_DELETE_WINDOW", lambda: None)  # khong cho tat ngang luc dang tai
+        self._progress_win = win
+
+    def _update_progress(self, pct, downloaded, total):
+        self.progress_var.set(pct)
+        self.progress_label.config(
+            text=f"{downloaded / (1024*1024):.1f} MB / {total / (1024*1024):.1f} MB ({pct:.0f}%)")
+
+    def _download_worker(self, url, dest_path, total_size):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "ECU-Pinout-Tool"})
+            downloaded = 0
+            chunk_size = 65536
+            with urllib.request.urlopen(req, timeout=20) as resp, open(dest_path, "wb") as f:
+                while True:
+                    chunk = resp.read(chunk_size)
+                    if not chunk:
+                        break
+                    f.write(chunk)
+                    downloaded += len(chunk)
+                    if total_size:
+                        pct = downloaded / total_size * 100
+                        self.after(0, lambda p=pct, d=downloaded:
+                                   self._update_progress(p, d, total_size))
+            self.after(0, lambda: self._on_download_complete(dest_path))
+        except Exception as e:
+            err = e
+            self.after(0, lambda err=err: self._on_download_failed(err))
+
+    def _on_download_complete(self, dest_path):
+        if self._progress_win is not None:
+            self._progress_win.destroy()
+            self._progress_win = None
+
+        if messagebox.askyesno(
+                "Download complete",
+                f"The update has been downloaded to:\n{dest_path}\n\n"
+                "Close this app and open that file to install the update.\n\n"
+                "Open the containing folder now?"):
+            self._open_containing_folder(dest_path)
+
+    def _on_download_failed(self, error):
+        if self._progress_win is not None:
+            self._progress_win.destroy()
+            self._progress_win = None
+        messagebox.showerror(
+            "Download failed",
+            f"Could not download the update.\nCheck your internet connection "
+            f"and try again later.\n\nDetails: {error}")
+
+    def _open_containing_folder(self, path):
+        folder = os.path.dirname(path)
+        try:
+            if sys.platform.startswith("win"):
+                subprocess.Popen(f'explorer /select,"{path}"')
+            elif sys.platform == "darwin":
+                subprocess.Popen(["open", "-R", path])
+            else:
+                subprocess.Popen(["xdg-open", folder])
+        except Exception:
+            messagebox.showinfo("Folder", f"File saved at:\n{path}")
 
     # ---------------------------------------------------------- theme
     def _apply_theme(self):

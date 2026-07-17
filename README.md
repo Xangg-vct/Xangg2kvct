@@ -94,7 +94,10 @@ bundled copy — ask if you need that workflow).
   panel) between light and dark mode, no restart needed.
 - **Update checker**: automatically checks GitHub Releases for a newer
   version shortly after launch, and also via the "Check for updates" button
-  or Help menu.
+  or Help menu. When a newer version is found, the app **downloads the new
+  `.exe` directly to your Downloads folder** (with a progress bar) — no
+  browser or GitHub page is ever shown to the user. After the download
+  finishes, it offers to open the folder so you can run the new installer.
 
 ## 6. What you still need to do
 
