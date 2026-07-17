@@ -1,16 +1,17 @@
 """
 ECU PINOUT TOOL - Desktop App (Windows/Mac/Linux)
 --------------------------------------------------
-- Cay danh muc (hang xe -> dong ECU) ben trai.
-- Anh pinout + nhan chu thich cac chan ben phai, ho tro zoom / pan.
-- Du lieu doc tu data/pinouts.json, anh doc tu data/images/.
-- Khong sua code de them du lieu: chi sua/them trong pinouts.json va bo anh vao data/images.
+- Category tree (car brand -> ECU model) on the left.
+- Pinout image + pin labels on the right, with zoom/pan support.
+- Data is read from data/pinouts.json, images from data/images/.
+- No code changes needed to add data: just edit/add entries in pinouts.json
+  and drop images into data/images.
 
-Chay:
+Run:
     pip install pillow
     python main.py
 
-Dong goi thanh .exe tren Windows (tuy chon):
+Package as a Windows .exe (optional):
     pip install pyinstaller
     pyinstaller --onefile --windowed --add-data "data;data" main.py
 """
@@ -27,18 +28,18 @@ from tkinter import ttk, messagebox, filedialog
 try:
     from PIL import Image, ImageDraw, ImageFont, ImageTk
 except ImportError:
-    print("Thieu thu vien Pillow. Chay: pip install pillow")
+    print("Missing Pillow library. Run: pip install pillow")
     sys.exit(1)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
 DATA_FILE = os.path.join(DATA_DIR, "pinouts.json")
 
-# ---- Thong tin phien ban / repo GitHub de tu kiem tra ban cap nhat ----
-# SUA 2 DONG DUOI DAY sau khi ban tao repo GitHub that (xem HUONG_DAN_GITHUB.md)
+# ---- Version / GitHub repo info used for the update check ----
+# EDIT THE 2 LINES BELOW after creating your real GitHub repo (see HOW_TO_GITHUB.md)
 APP_VERSION = "1.0.2"
-GITHUB_OWNER = "Xangg-vct"     # <-- da cap nhat theo repo that
-GITHUB_REPO = "Xangg2kvct"     # <-- da cap nhat theo repo that
+GITHUB_OWNER = "Xangg-vct"     # <-- already set to the real repo owner
+GITHUB_REPO = "Xangg2kvct"     # <-- already set to the real repo name
 
 ACCENT = "#8a7dff"
 
@@ -54,7 +55,7 @@ THEMES = {
         "btn_bg": "#ffffff",
         "btn_fg": "#1b1b1b",
         "hint_fg": "#555555",
-        "toggle_label": "🌙 Che do toi",
+        "toggle_label": "🌙 Dark mode",
     },
     "dark": {
         "app_bg": "#1a1d24",
@@ -67,7 +68,7 @@ THEMES = {
         "btn_bg": "#2c3140",
         "btn_fg": "#f0f0f5",
         "hint_fg": "#9aa0b0",
-        "toggle_label": "☀ Che do sang",
+        "toggle_label": "☀ Light mode",
     },
 }
 
@@ -80,7 +81,7 @@ class PinoutApp(tk.Tk):
         self.geometry("1180x680")
         self.minsize(820, 520)
 
-        self.current_image_pil = None   # anh goc (PIL) cua model dang xem
+        self.current_image_pil = None   # original (PIL) image of the model being viewed
         self.current_pins = []
         self.zoom = 1.0
         self.offset_x = 0
@@ -96,7 +97,7 @@ class PinoutApp(tk.Tk):
         self.bind_all("<Control-p>", self._print_to_pdf)
         self.bind_all("<Control-P>", self._print_to_pdf)
 
-        # kiem tra ban cap nhat ngam sau 1.5s, khong lam cham luc mo app
+        # silently check for updates 1.5s after launch, so it doesn't slow down startup
         self.after(1500, lambda: self._check_for_update_async(silent=True))
 
     # ---------------------------------------------------------- data
@@ -105,10 +106,10 @@ class PinoutApp(tk.Tk):
             with open(DATA_FILE, "r", encoding="utf-8") as f:
                 return json.load(f)
         except FileNotFoundError:
-            messagebox.showerror("Loi", f"Khong tim thay {DATA_FILE}")
+            messagebox.showerror("Error", f"File not found: {DATA_FILE}")
             return {"brands": {}}
         except json.JSONDecodeError as e:
-            messagebox.showerror("Loi du lieu", f"pinouts.json bi sai dinh dang:\n{e}")
+            messagebox.showerror("Data error", f"pinouts.json is malformed:\n{e}")
             return {"brands": {}}
 
     def reload_data(self):
@@ -120,23 +121,23 @@ class PinoutApp(tk.Tk):
     def _build_menu(self):
         menubar = tk.Menu(self)
         filemenu = tk.Menu(menubar, tearoff=0)
-        filemenu.add_command(label="Tai lai du lieu (F5)", command=self.reload_data)
+        filemenu.add_command(label="Reload data (F5)", command=self.reload_data)
         filemenu.add_separator()
-        filemenu.add_command(label="In ra PDF...", accelerator="Ctrl+P",
+        filemenu.add_command(label="Export to PDF...", accelerator="Ctrl+P",
                               command=self._print_to_pdf)
         filemenu.add_separator()
-        filemenu.add_command(label="Thoat", command=self.destroy)
+        filemenu.add_command(label="Exit", command=self.destroy)
         menubar.add_cascade(label="File", menu=filemenu)
 
         helpmenu = tk.Menu(menubar, tearoff=0)
-        helpmenu.add_command(label="Huong dan them du lieu", command=self._show_help)
+        helpmenu.add_command(label="How to add data", command=self._show_help)
         helpmenu.add_separator()
-        helpmenu.add_command(label="Kiem tra ban cap nhat...",
+        helpmenu.add_command(label="Check for updates...",
                               command=lambda: self._check_for_update_async(silent=False))
-        helpmenu.add_command(label="Ve phan mem",
+        helpmenu.add_command(label="About",
                               command=lambda: messagebox.showinfo(
-                                  "Ve phan mem",
-                                  f"ECU PINOUT TOOL\nPhien ban: v{APP_VERSION}\n"
+                                  "About",
+                                  f"ECU PINOUT TOOL\nVersion: v{APP_VERSION}\n"
                                   f"Repo: https://github.com/{GITHUB_OWNER}/{GITHUB_REPO}"))
         menubar.add_cascade(label="Help", menu=helpmenu)
 
@@ -145,13 +146,13 @@ class PinoutApp(tk.Tk):
 
     def _show_help(self):
         messagebox.showinfo(
-            "Huong dan them du lieu",
-            "1) Bo file anh ECU vao thu muc data/images/\n"
-            "2) Mo data/pinouts.json, them mot model moi trong brand tuong ung:\n"
-            "   { \"title\": ..., \"version\": ..., \"image\": \"images/ten_anh.png\",\n"
+            "How to add data",
+            "1) Put the ECU image file into the data/images/ folder\n"
+            "2) Open data/pinouts.json, add a new model under the right brand:\n"
+            "   { \"title\": ..., \"version\": ..., \"image\": \"images/file_name.png\",\n"
             "     \"pins\": [ {\"x\":0.5, \"y\":0.5, \"label\":\"PIN..=...\", \"color\":\"#e74c3c\"} ] }\n"
-            "   (x, y la ti le 0..1 theo chieu rong/cao anh, khong phai pixel)\n"
-            "3) Bam File > Tai lai du lieu (hoac F5) de cap nhat khong can khoi dong lai app."
+            "   (x, y are 0..1 ratios of image width/height, not pixels)\n"
+            "3) Click File > Reload data (or press F5) to refresh without restarting the app."
         )
 
     # ---------------------------------------------------------- layout
@@ -165,7 +166,7 @@ class PinoutApp(tk.Tk):
 
         search_frame = ttk.Frame(self.left)
         search_frame.pack(fill=tk.X, padx=6, pady=6)
-        ttk.Label(search_frame, text="Tim:").pack(side=tk.LEFT)
+        ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT)
         self.search_var = tk.StringVar()
         self.search_var.trace_add("write", lambda *a: self._filter_tree())
         ttk.Entry(search_frame, textvariable=self.search_var).pack(
@@ -222,15 +223,20 @@ class PinoutApp(tk.Tk):
                    command=lambda: self._zoom_step(0.1)).pack(side=tk.LEFT)
         ttk.Button(zoom_bar, text="Reset view",
                    command=self._reset_view).pack(side=tk.LEFT, padx=8)
-        ttk.Button(zoom_bar, text="In PDF (Ctrl+P)",
+        ttk.Button(zoom_bar, text="Export PDF (Ctrl+P)",
                    command=self._print_to_pdf).pack(side=tk.LEFT, padx=8)
+
+        self.update_btn = ttk.Button(
+            zoom_bar, text="Check for updates",
+            command=lambda: self._check_for_update_async(silent=False))
+        self.update_btn.pack(side=tk.LEFT, padx=8)
 
         self.theme_btn = ttk.Button(zoom_bar, text="", width=16,
                                      command=self._toggle_theme)
         self.theme_btn.pack(side=tk.RIGHT, padx=8)
 
         self.lbl_hint = ttk.Label(
-            zoom_bar, text="Keo chuot de di chuyen anh, lan chuot de zoom")
+            zoom_bar, text="Drag to pan the image, scroll to zoom")
         self.lbl_hint.pack(side=tk.RIGHT, padx=8)
 
         self._clear_viewer()
@@ -244,8 +250,13 @@ class PinoutApp(tk.Tk):
         return tuple(parts)
 
     def _check_for_update_async(self, silent=True):
+        if not silent:
+            self.update_btn.configure(state="disabled", text="Checking...")
         threading.Thread(target=self._check_for_update_worker,
                           args=(silent,), daemon=True).start()
+
+    def _reset_update_btn(self):
+        self.update_btn.configure(state="normal", text="Check for updates")
 
     def _check_for_update_worker(self, silent):
         url = f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}/releases/latest"
@@ -265,20 +276,23 @@ class PinoutApp(tk.Tk):
                 self.after(0, lambda: self._on_update_available(latest_tag, release_url))
             elif not silent:
                 self.after(0, lambda: messagebox.showinfo(
-                    "Kiem tra cap nhat", f"Ban dang dung phien ban moi nhat (v{APP_VERSION})."))
+                    "Check for updates", f"You are running the latest version (v{APP_VERSION})."))
         except Exception as e:
             if not silent:
                 self.after(0, lambda: messagebox.showwarning(
-                    "Kiem tra cap nhat",
-                    f"Khong the ket noi toi GitHub de kiem tra cap nhat.\n"
-                    f"Kiem tra ket noi mang hoac thu lai sau.\n\nChi tiet: {e}"))
+                    "Check for updates",
+                    f"Could not connect to GitHub to check for updates.\n"
+                    f"Check your internet connection or try again later.\n\nDetails: {e}"))
+        finally:
+            if not silent:
+                self.after(0, self._reset_update_btn)
 
     def _on_update_available(self, latest_tag, release_url):
         if messagebox.askyesno(
-                "Co ban cap nhat moi",
-                f"Da co phien ban moi: v{latest_tag}\n"
-                f"Ban dang dung: v{APP_VERSION}\n\n"
-                "Mo trang tai ve bay gio khong?"):
+                "Update available",
+                f"A new version is available: v{latest_tag}\n"
+                f"You are running: v{APP_VERSION}\n\n"
+                "Open the download page now?"):
             webbrowser.open(release_url)
 
     # ---------------------------------------------------------- theme
@@ -328,8 +342,8 @@ class PinoutApp(tk.Tk):
         return ImageFont.load_default()
 
     def _build_export_image(self):
-        """Ve lai toan bo view (tieu de + anh + nhan pin) thanh 1 anh PIL,
-        doc lap voi zoom/pan dang xem, de xuat PDF net va gon."""
+        """Redraw the whole view (title + image + pin labels) into a single PIL
+        image, independent of the current zoom/pan, for a crisp, well-framed PDF."""
         if self.current_image_pil is None:
             return None
 
@@ -378,7 +392,7 @@ class PinoutApp(tk.Tk):
 
     def _print_to_pdf(self, event=None):
         if self.current_image_pil is None:
-            messagebox.showinfo("In PDF", "Hay chon mot dong ECU truoc khi in.")
+            messagebox.showinfo("Export PDF", "Please select an ECU model before exporting.")
             return
 
         page = self._build_export_image()
@@ -389,7 +403,7 @@ class PinoutApp(tk.Tk):
         safe_name = "".join(c if c.isalnum() or c in "._- " else "_"
                             for c in title_text)[:80] or "pinout"
         path = filedialog.asksaveasfilename(
-            title="Luu pinout ra PDF",
+            title="Save pinout as PDF",
             defaultextension=".pdf",
             initialfile=f"{safe_name}.pdf",
             filetypes=[("PDF files", "*.pdf")])
@@ -398,9 +412,9 @@ class PinoutApp(tk.Tk):
 
         try:
             page.save(path, "PDF", resolution=150.0)
-            messagebox.showinfo("In PDF", f"Da luu file PDF:\n{path}")
+            messagebox.showinfo("Export PDF", f"PDF file saved:\n{path}")
         except Exception as e:
-            messagebox.showerror("Loi", f"Khong the luu PDF:\n{e}")
+            messagebox.showerror("Error", f"Could not save PDF:\n{e}")
 
     # ---------------------------------------------------------- tree
     def _populate_tree(self, filter_text=""):
@@ -444,7 +458,7 @@ class PinoutApp(tk.Tk):
 
     # ---------------------------------------------------------- viewer
     def _clear_viewer(self):
-        self.lbl_title.config(text="Chon mot dong ECU ben trai de xem pinout")
+        self.lbl_title.config(text="Select an ECU model on the left to view its pinout")
         self.lbl_version.config(text="")
         self.lbl_subtitle.config(text="")
         self.canvas.delete("all")
@@ -464,7 +478,7 @@ class PinoutApp(tk.Tk):
         if image_path and os.path.isfile(image_path):
             self.current_image_pil = Image.open(image_path).convert("RGB")
         else:
-            self.current_image_pil = self._placeholder_image(image_rel or "(chua co anh)")
+            self.current_image_pil = self._placeholder_image(image_rel or "(no image yet)")
 
         self.current_pins = model.get("pins", [])
         self._reset_view()
@@ -474,8 +488,8 @@ class PinoutApp(tk.Tk):
         img = Image.new("RGB", (w, h), "#dfe1e6")
         draw = ImageDraw.Draw(img)
         draw.rectangle([40, 40, w - 40, h - 40], outline="#9aa0ab", width=3)
-        text = "Chua co anh cho model nay"
-        sub = f"Dat file tai: data/{missing_path}"
+        text = "No image for this model yet"
+        sub = f"Place the file at: data/{missing_path}"
         draw.text((60, h // 2 - 30), text, fill="#555")
         draw.text((60, h // 2), sub, fill="#888")
         return img

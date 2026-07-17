@@ -1,9 +1,9 @@
 name: Build and Release Windows EXE
 
-# Workflow nay tu chay khi ban push mot "tag" dang v1.0.0, v1.1.0, v2.0.3, ...
-# No se: cai Python -> cai pillow + pyinstaller -> dong goi main.py thanh .exe
-# -> tao 1 GitHub Release moi va dinh kem file .exe vao do tu dong.
-# Ban KHONG can cai Python/pyinstaller tren may minh de lam viec nay.
+# This workflow runs automatically when you push a "tag" like v1.0.0, v1.1.0, v2.0.3, ...
+# It will: install Python -> install pillow + pyinstaller -> package main.py into a .exe
+# -> create a new GitHub Release and attach the .exe file automatically.
+# You do NOT need to install Python/pyinstaller on your own machine for this.
 
 on:
   push:

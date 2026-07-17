@@ -1,37 +1,37 @@
 # ECU PINOUT TOOL
 
-App desktop tra cứu pinout ECU theo hãng xe / dòng ECU, mô phỏng theo giao diện
-"MEDC17 EGPT PINOUT TOOL": cây danh mục bên trái, ảnh connector + nhãn chú
-thích chân bên phải, hỗ trợ zoom/pan ảnh.
+A desktop app for looking up ECU pinouts by car brand / ECU model, modeled
+after the "MEDC17 EGPT PINOUT TOOL" interface: a category tree on the left,
+connector image + pin labels on the right, with image zoom/pan support.
 
-## 1. Chạy trên máy (Windows/Mac/Linux)
+## 1. Run on your machine (Windows/Mac/Linux)
 
-Cần Python 3.9+ (Windows tải tại https://www.python.org/downloads, nhớ tick
-"Add Python to PATH" lúc cài).
+Requires Python 3.9+ (Windows: download at https://www.python.org/downloads,
+remember to tick "Add Python to PATH" during install).
 
 ```bash
 pip install pillow
 python main.py
 ```
 
-## 2. Cấu trúc project
+## 2. Project structure
 
 ```
 pinout_tool/
-├─ main.py                # code chính, không cần sửa khi thêm dữ liệu
+├─ main.py                # main code, no changes needed to add data
 ├─ data/
-│  ├─ pinouts.json        # danh sách hãng xe / dòng ECU / vị trí pin
-│  └─ images/              # ảnh connector ECU (bạn tự bỏ vào)
+│  ├─ pinouts.json        # list of car brands / ECU models / pin positions
+│  └─ images/              # ECU connector images (you add these)
 └─ README.md
 ```
 
-## 3. Thêm hãng xe / dòng ECU / ảnh pinout mới
+## 3. Adding a new car brand / ECU model / pinout image
 
-Không cần sửa `main.py`. Chỉ cần:
+No need to edit `main.py`. Just:
 
-1. Bỏ ảnh connector (png/jpg) vào `data/images/`.
-2. Mở `data/pinouts.json`, thêm một model mới vào brand tương ứng
-   (hoặc thêm cả brand mới):
+1. Drop the connector image (png/jpg) into `data/images/`.
+2. Open `data/pinouts.json`, add a new model under the matching brand
+   (or add a whole new brand):
 
 ```json
 "FAL": {
@@ -50,64 +50,72 @@ Không cần sửa `main.py`. Chỉ cần:
 }
 ```
 
-- `x`, `y`: toạ độ **tỉ lệ** (0.0 → 1.0) theo chiều rộng/cao ảnh gốc, không
-  phải pixel — nhờ vậy nhãn luôn đúng vị trí dù ảnh to/nhỏ khác nhau. Cách xác
-  định nhanh: mở ảnh trong Paint/GIMP, xem toạ độ pixel con trỏ, rồi chia cho
-  chiều rộng/cao ảnh.
-- `color`: mã màu hex cho chấm tròn + nhãn (ví dụ đỏ = nguồn, xanh dương =
-  tín hiệu, xanh lá = CAN...).
-- Nếu chưa có ảnh, app vẫn chạy bình thường và hiện khung placeholder báo
-  đường dẫn ảnh còn thiếu.
+- `x`, `y`: **ratio** coordinates (0.0 → 1.0) relative to the original image
+  width/height, not pixels — this keeps labels correctly positioned no matter
+  the image size. Quick way to find them: open the image in Paint/GIMP, read
+  the cursor's pixel coordinates, then divide by the image width/height.
+- `color`: hex color for the pin dot + label (e.g. red = power, blue =
+  signal, green = CAN...).
+- If no image is set yet, the app still runs fine and shows a placeholder
+  panel noting the missing image path.
 
-Sau khi sửa `pinouts.json`, vào app bấm **File → Tải lại dữ liệu** (hoặc
-phím **F5**) — không cần khởi động lại chương trình.
+After editing `pinouts.json`, click **File → Reload data** in the app (or
+press **F5**) — no need to restart the program.
 
-## 4. Đóng gói thành file .exe chạy trên Windows (không cần cài Python)
+## 4. Building a Windows .exe (no Python required to run it)
 
-Trên máy Windows đã cài Python + pillow:
+On a Windows machine with Python + pillow installed:
 
 ```bash
 pip install pyinstaller
 pyinstaller --onefile --windowed --add-data "data;data" --name "ECU_Pinout_Tool" main.py
 ```
 
-File `.exe` sẽ nằm trong thư mục `dist/`. Copy cả file `.exe` này đi là chạy
-được, không cần cài Python trên máy khác — nhưng nếu bạn cập nhật
-`pinouts.json`/ảnh sau này, cần đóng gói lại (hoặc để `data/` bên cạnh file
-.exe và sửa `main.py` để đọc từ thư mục đó thay vì bundle cứng — có thể yêu
-cầu mình chỉnh nếu bạn cần workflow này).
+The `.exe` will be in the `dist/` folder. Copying just this `.exe` file is
+enough to run it elsewhere, no Python install needed — but if you update
+`pinouts.json`/images later, you'll need to rebuild it (or keep `data/` next
+to the `.exe` and adjust `main.py` to read from that folder instead of the
+bundled copy — ask if you need that workflow).
 
-## 5. Các chức năng đã có
+## 5. Features
 
-- Tìm kiếm nhanh brand/model ở ô "Tìm" phía trên cây danh mục.
-- Zoom bằng lăn chuột hoặc nút +/-, kéo chuột để pan ảnh, nút "Reset view".
-- Placeholder tự động khi ảnh chưa có.
-- Đổi dữ liệu không cần build lại code (F5 để tải lại).
-- **In ra PDF**: nhấn `Ctrl+P`, hoặc menu File → "In ra PDF...", hoặc nút
-  "In PDF (Ctrl+P)" ở thanh dưới. File PDF chứa tiêu đề, phiên bản, subtitle,
-  ảnh connector và toàn bộ nhãn pin — được vẽ lại độc lập với mức zoom/pan
-  đang xem trên màn hình, nên luôn nét và đúng vị trí.
-- **Nút gạt sáng/tối**: nút bên phải thanh công cụ dưới cùng (🌙/☀) đổi toàn
-  bộ giao diện (cây danh mục, banner tiêu đề, khung ảnh) giữa chế độ sáng và
-  tối, không cần khởi động lại app.
+- Quick brand/model search in the "Search" box above the category tree.
+- Zoom with the mouse wheel or +/- buttons, drag to pan the image, "Reset
+  view" button.
+- Automatic placeholder when an image isn't available yet.
+- Update data without rebuilding the code (F5 to reload).
+- **Export to PDF**: press `Ctrl+P`, or File menu → "Export to PDF...", or
+  the "Export PDF (Ctrl+P)" button at the bottom. The PDF contains the
+  title, version, subtitle, connector image, and all pin labels — redrawn
+  independently of the current on-screen zoom/pan, so it's always crisp and
+  correctly positioned.
+- **Light/dark mode toggle**: button on the right side of the bottom toolbar
+  (🌙/☀) switches the whole interface (category tree, header banner, image
+  panel) between light and dark mode, no restart needed.
+- **Update checker**: automatically checks GitHub Releases for a newer
+  version shortly after launch, and also via the "Check for updates" button
+  or Help menu.
 
-## 6. Việc bạn cần làm tiếp theo
+## 6. What you still need to do
 
-Gửi mình (hoặc tự thêm theo hướng dẫn mục 3):
-- Ảnh connector ECU cho từng dòng máy.
-- Toạ độ + nhãn từng chân (pin) cần chú thích.
-- Danh sách đầy đủ các hãng/dòng ECU nếu khác với khung mẫu hiện tại (hiện
-  đã dựng sẵn 25 hãng như trong ảnh bạn gửi, riêng FAL có 4 dòng mẫu, trong
-  đó MED17.3.3 có sẵn 6 pin mẫu để bạn thấy cách hoạt động).
+Send over (or add yourself following section 3):
+- ECU connector images for each model.
+- Pin coordinates + labels to annotate.
+- The full list of brands/models if it differs from the current scaffold
+  (currently pre-built with 25 brands as shown in your screenshot; FAL has
+  4 sample models, and MED17.3.3 has 6 sample pins so you can see how it
+  works).
 
-## 7. Quản lý phiên bản & đăng bản mới lên GitHub
+## 7. Version management & publishing new releases on GitHub
 
-Project đã có sẵn:
-- `APP_VERSION` khai báo trong `main.py`.
-- App tự kiểm tra bản mới trên GitHub Releases mỗi khi mở lên (menu
-  **Help → Kiểm tra bản cập nhật...** để kiểm tra thủ công).
-- File `.github/workflows/build.yml` — tự động build `.exe` và đăng Release
-  khi bạn gắn tag phiên bản (không cần tự chạy PyInstaller).
+The project already includes:
+- `APP_VERSION` declared in `main.py`.
+- The app automatically checks GitHub Releases for a newer version on
+  launch (menu **Help → Check for updates...** for a manual check).
+- `.github/workflows/build.yml` — automatically builds the `.exe` and
+  publishes a Release whenever you push a version tag (no need to run
+  PyInstaller yourself).
 
-Xem hướng dẫn từng bước chi tiết (tạo tài khoản, tạo repo, đưa code lên,
-ra bản mới) tại file **`HUONG_DAN_GITHUB.md`** đi kèm.
+See the detailed step-by-step guide (creating an account, creating the
+repo, pushing code, publishing new versions) in the accompanying
+**`HOW_TO_GITHUB.md`** file.

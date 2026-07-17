@@ -14,5 +14,5 @@ Thumbs.db
 .vscode/
 .idea/
 
-# File tam khi test
+# temp files created during testing
 *.log
