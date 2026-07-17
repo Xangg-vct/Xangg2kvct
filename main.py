@@ -37,7 +37,7 @@ DATA_FILE = os.path.join(DATA_DIR, "pinouts.json")
 
 # ---- Version / GitHub repo info used for the update check ----
 # EDIT THE 2 LINES BELOW after creating your real GitHub repo (see HOW_TO_GITHUB.md)
-APP_VERSION = "1.0.2"
+APP_VERSION = "1.0.4"
 GITHUB_OWNER = "Xangg-vct"     # <-- already set to the real repo owner
 GITHUB_REPO = "Xangg2kvct"     # <-- already set to the real repo name
 
